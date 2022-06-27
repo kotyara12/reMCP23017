@@ -1,0 +1,17 @@
+{
+  "name": "reMCP23017",
+  "version": "1.0.0",
+  "description": "Driver for MCP23017 from ESP-IDF",
+  "keywords": "mcp23017",
+  "authors":
+  [
+    {
+      "name": "Alexander Razzhivin",
+      "email": "kotyara12@yandex.ru",
+      "url": "https://kotyara12.ru"
+    }
+  ],
+  "license": "MIT",
+  "frameworks": ["arduino", "espidf"],
+  "platforms": ["espressif32"]
+}
