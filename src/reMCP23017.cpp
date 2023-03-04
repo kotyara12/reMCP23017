@@ -104,7 +104,9 @@ bool reMCP23017::write16(uint8_t reg, uint16_t value)
 bool reMCP23017::configGet(mcp23017_int_out_mode_t *intOutMode, bool *intOutMirror)
 {
   uint8_t config;
+  // Read current config
   if (read8(REG_IOCON, &config)) {
+    // Get mode of the INT output pin
     if (config & BIT_IOCON_ODR) {
       *intOutMode = MCP23017_OPEN_DRAIN;
     } else {
@@ -114,6 +116,7 @@ bool reMCP23017::configGet(mcp23017_int_out_mode_t *intOutMode, bool *intOutMirr
         *intOutMode = MCP23017_ACTIVE_LOW;
       };
     };
+    // Get INT pins are internally connected
     *intOutMirror = (config & BIT_IOCON_MIRROR);
     return true;
   };
@@ -123,7 +126,11 @@ bool reMCP23017::configGet(mcp23017_int_out_mode_t *intOutMode, bool *intOutMirr
 bool reMCP23017::configSet(mcp23017_int_out_mode_t intOutMode, bool intOutMirror)
 {
   uint8_t config;
+  // Read current config
   if (read8(REG_IOCON, &config)) {
+    // Set 16-bit mode (BANK = 0)
+    config &= ~BIT_IOCON_BANK;
+    // Set mode of the INT output pin
     if (intOutMode == MCP23017_ACTIVE_HIGH) {
       config &= ~BIT_IOCON_ODR;
       config |= BIT_IOCON_INTPOL;
@@ -134,8 +141,9 @@ bool reMCP23017::configSet(mcp23017_int_out_mode_t intOutMode, bool intOutMirror
       config |= BIT_IOCON_ODR;
       config &= ~BIT_IOCON_INTPOL;
     };
+    // Set INT pins are internally connected
     intOutMirror ? config |= BIT_IOCON_MIRROR : config &= ~BIT_IOCON_MIRROR;
-    config &= ~BIT_IOCON_BANK;
+    // Write config
     return write8(REG_IOCON, config);
   };
   return false;
@@ -345,15 +353,24 @@ bool reMCP23017::portSetInterrupt(uint16_t mask, mcp23017_gpio_intr_t intr)
 // ------------------------------------------------ Refresh of interrupts ------------------------------------------------
 // -----------------------------------------------------------------------------------------------------------------------
 
-bool reMCP23017::update()
+bool reMCP23017::portOnInterrupt(bool useIntCap)
 {
   uint16_t flags;
+  // Read which PINs caused the interrupt
   if (read16(REG_INTFA, &flags)) {
     if (flags != 0) {
       // At least one PIN caused an interrupt
       uint16_t pins;
-      if (!read16(REG_GPIOA, &pins)) {
-        return false;
+      if (useIntCap) {
+        // Read PINs at the moment of interrupt generation
+        if (!read16(REG_INTCAPA, &pins)) {
+          return false;
+        };
+      } else {
+        // Read PINs for the current moment
+        if (!read16(REG_GPIOA, &pins)) {
+          return false;
+        };
       };
       
       // Prepare data for events

@@ -78,7 +78,7 @@ class reMCP23017 {
     bool portSetInterrupt(uint16_t mask, mcp23017_gpio_intr_t intr);
 
     // If interrupts are detected, events will be posted to the event loop
-    bool update();
+    bool portOnInterrupt(bool useIntCap);
   private:
     i2c_port_t _numI2C = 0; 
     uint8_t _addrI2C = 0;

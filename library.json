@@ -1,6 +1,6 @@
 {
   "name": "reMCP23017",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Driver for MCP23017 from ESP-IDF",
   "keywords": "mcp23017",
   "authors":
