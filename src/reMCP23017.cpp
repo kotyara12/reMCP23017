@@ -353,6 +353,31 @@ bool reMCP23017::portSetInterrupt(uint16_t mask, mcp23017_gpio_intr_t intr)
 // ------------------------------------------------ Refresh of interrupts ------------------------------------------------
 // -----------------------------------------------------------------------------------------------------------------------
 
+bool reMCP23017::portUpdate(uint16_t mask)
+{
+  uint16_t pins = 0;
+  if (read16(REG_GPIOA, &pins)) {
+    // Prepare data for events
+    gpio_data_t data;
+    data.bus = (uint8_t)_numI2C + 1;
+    data.address = _addrI2C;
+
+    // Send events only for pins that have changed
+    for (uint8_t i = 0; i < 16; i++) {
+      if ((mask & (1 << i)) > 0) {
+        data.pin = i;
+        data.value = (uint8_t)((pins & (1 << i)) > 0);
+        eventLoopPost(RE_GPIO_EVENTS, RE_GPIO_CHANGE, &data, sizeof(data), portMAX_DELAY);
+        if (_callback) {
+          _callback((void*)this, data, 0);
+        };
+      };
+    };
+    return true;
+  };
+  return false;
+}
+
 bool reMCP23017::portOnInterrupt(bool useIntCap)
 {
   uint16_t flags;

@@ -65,6 +65,7 @@ class reMCP23017 {
     // Unbuffered read / write
     bool portRead(uint16_t * value);
     bool portWrite(uint16_t value);
+    bool portUpdate(uint16_t mask);
     bool pinRead(uint8_t pin, bool *level);
     bool pinWrite(uint8_t pin, bool level);
 
