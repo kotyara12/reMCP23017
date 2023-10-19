@@ -49,6 +49,11 @@ reMCP23017::~reMCP23017()
 {
 }
 
+void reMCP23017::setCallback(cb_gpio_change_t callback)
+{
+  _callback = callback;
+}
+
 // -----------------------------------------------------------------------------------------------------------------------
 // --------------------------------------------------------- I2C ---------------------------------------------------------
 // -----------------------------------------------------------------------------------------------------------------------
@@ -187,6 +192,16 @@ bool reMCP23017::pinSetMode(uint8_t pin, mcp23017_gpio_mode_t mode)
   return false;
 }
 
+bool reMCP23017::portGetInputPolarity(uint16_t * value)
+{
+  return read16(REG_IPOLA, value);
+}
+
+bool reMCP23017::portSetInputPolarity(uint16_t value)
+{
+  return write16(REG_IPOLA, value);
+}
+
 // -----------------------------------------------------------------------------------------------------------------------
 // --------------------------------------------------- Internal pullup ---------------------------------------------------
 // -----------------------------------------------------------------------------------------------------------------------
@@ -253,6 +268,20 @@ bool reMCP23017::pinWrite(uint8_t pin, bool level)
     return write16(REG_GPIOA, buf);
   };
   return false;
+}
+
+// -----------------------------------------------------------------------------------------------------------------------
+// ----------------------------------------------------- Interrupts ------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------
+
+bool reMCP23017::getIntFlags(uint16_t* flags)
+{
+  return read16(REG_INTFA, flags);
+}
+
+bool reMCP23017::getIntCapture(uint16_t* bits)
+{
+  return read16(REG_INTCAPA, bits);
 }
 
 // -----------------------------------------------------------------------------------------------------------------------
@@ -356,6 +385,9 @@ bool reMCP23017::portSetInterrupt(uint16_t mask, mcp23017_gpio_intr_t intr)
 bool reMCP23017::portUpdate(uint16_t mask)
 {
   uint16_t pins = 0;
+  // Read and reset INTF register
+  read16(REG_INTFA, &pins);
+  // Read PINs for the current moment
   if (read16(REG_GPIOA, &pins)) {
     // Prepare data for events
     gpio_data_t data;
@@ -367,9 +399,10 @@ bool reMCP23017::portUpdate(uint16_t mask)
       if ((mask & (1 << i)) > 0) {
         data.pin = i;
         data.value = (uint8_t)((pins & (1 << i)) > 0);
-        eventLoopPost(RE_GPIO_EVENTS, RE_GPIO_CHANGE, &data, sizeof(data), portMAX_DELAY);
         if (_callback) {
           _callback((void*)this, data, 0);
+        } else {
+          eventLoopPost(RE_GPIO_EVENTS, RE_GPIO_CHANGE, &data, sizeof(data), portMAX_DELAY);
         };
       };
     };
@@ -408,9 +441,10 @@ bool reMCP23017::portOnInterrupt(bool useIntCap)
         if ((flags & (1 << i)) > 0) {
           data.pin = i;
           data.value = (uint8_t)((pins & (1 << i)) > 0);
-          eventLoopPost(RE_GPIO_EVENTS, RE_GPIO_CHANGE, &data, sizeof(data), portMAX_DELAY);
           if (_callback) {
             _callback((void*)this, data, 0);
+          } else {
+            eventLoopPost(RE_GPIO_EVENTS, RE_GPIO_CHANGE, &data, sizeof(data), portMAX_DELAY);
           };
         };
       };

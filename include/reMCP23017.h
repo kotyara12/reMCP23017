@@ -46,6 +46,8 @@ class reMCP23017 {
     reMCP23017(i2c_port_t numI2C, uint8_t addrI2C, cb_gpio_change_t callback);
     ~reMCP23017();
 
+    void setCallback(cb_gpio_change_t callback);
+
     // Configure
     bool configGet(mcp23017_int_out_mode_t *intOutMode, bool *intOutMirror);
     bool configSet(mcp23017_int_out_mode_t intOutMode, bool intOutMirror);
@@ -55,6 +57,8 @@ class reMCP23017 {
     bool portSetMode(uint16_t value);
     bool pinGetMode(uint8_t pin, mcp23017_gpio_mode_t *mode);
     bool pinSetMode(uint8_t pin, mcp23017_gpio_mode_t mode);
+    bool portGetInputPolarity(uint16_t * value);
+    bool portSetInputPolarity(uint16_t value);
 
     // Internal pullup
     bool portGetPullup(uint16_t * value);
@@ -69,6 +73,10 @@ class reMCP23017 {
     bool pinRead(uint8_t pin, bool *level);
     bool pinWrite(uint8_t pin, bool level);
 
+    // Interrupts
+    bool getIntFlags(uint16_t* flags);
+    bool getIntCapture(uint16_t* bits);
+
     // Output latch
     bool portGetLatch(uint16_t * value);
     bool portSetLatch(uint16_t value);
@@ -81,7 +89,7 @@ class reMCP23017 {
     // If interrupts are detected, events will be posted to the event loop
     bool portOnInterrupt(bool useIntCap);
   private:
-    i2c_port_t _numI2C = 0; 
+    i2c_port_t _numI2C = I2C_NUM_0; 
     uint8_t _addrI2C = 0;
     cb_gpio_change_t _callback = nullptr;
 
